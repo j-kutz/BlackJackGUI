@@ -86,7 +86,7 @@ public class BlackJackGUI extends JFrame{
 		secondPanel = new JPanel();
 		secondPanel.setBackground(new Color(7, 145, 27));
 		hitButton = new JButton("Hit");
-		hitButton.addActionListener(new ButtonListener());
+		hitButton.addActionListener(new hitButtonListener());
 		secondPanel.add(hitButton);
 	}
 	
@@ -101,7 +101,7 @@ public class BlackJackGUI extends JFrame{
 		numberOfCards++;
 	}
 	
-	private class ButtonListener implements ActionListener{
+	private class hitButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			boardPanel.add(cardImageLabels[numberOfCards]);
 			total += cardGameValues[cardValues[numberOfCards]-1];
