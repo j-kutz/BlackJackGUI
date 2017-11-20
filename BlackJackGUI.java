@@ -1,6 +1,5 @@
 /*
-	TODO: - change name of buttonlistener class to hitButtonListener
-		  - add stand button
+	TODO: - add stand button
 		  - add win/lose functionality
 		  - add multiple rounds functionality
 		  - polish layout
@@ -16,10 +15,11 @@ public class BlackJackGUI extends JFrame{
 	private JPanel firstPanel;
 	private JPanel secondPanel;
 	private JPanel startImagePanel;
-	private JLabel startImageLabel;
 	private JPanel boardPanel;
+	private JLabel startImageLabel;
 	private JButton hitButton;
 	private JButton startButton;
+	private JButton standButton;
 	private final int WINDOW_HEIGHT=600, WINDOW_WIDTH=800;
 	
 	private JLabel[] cardImageLabels;
@@ -87,7 +87,10 @@ public class BlackJackGUI extends JFrame{
 		secondPanel.setBackground(new Color(7, 145, 27));
 		hitButton = new JButton("Hit");
 		hitButton.addActionListener(new hitButtonListener());
+		standButton = new JButton("Stand");
+		standButton.addActionListener(new standButtonListener());
 		secondPanel.add(hitButton);
+		secondPanel.add(standButton);
 	}
 	
 	private void buildBoardPanel(){
@@ -123,6 +126,12 @@ public class BlackJackGUI extends JFrame{
 			remove(startImagePanel);
 			invalidate();
 			validate();
+		}
+	}
+	
+	private class standButtonListener implements ActionListener{
+		public void actionPerformed(ActionEvent e){
+			
 		}
 	}
 	
