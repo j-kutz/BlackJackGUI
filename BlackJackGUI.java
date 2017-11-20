@@ -1,6 +1,5 @@
 /*
-	TODO: - add stand button
-		  - add win/lose functionality
+	TODO: - add win/lose functionality
 		  - add multiple rounds functionality
 		  - polish layout
 		  - add title text to stsrt screen
@@ -16,7 +15,9 @@ public class BlackJackGUI extends JFrame{
 	private JPanel secondPanel;
 	private JPanel startImagePanel;
 	private JPanel boardPanel;
+	private JPanel newRoundPanel;
 	private JLabel startImageLabel;
+	private JLabel newRoundLabel;
 	private JButton hitButton;
 	private JButton startButton;
 	private JButton standButton;
@@ -42,6 +43,7 @@ public class BlackJackGUI extends JFrame{
 		buildStartImagePanel();
 		buildSecondPanel();
 		buildBoardPanel();
+		buildNewRoundPanel();
 		add(firstPanel, BorderLayout.SOUTH);
 		add(startImagePanel, BorderLayout.CENTER);
 		//pack(); 
@@ -104,12 +106,38 @@ public class BlackJackGUI extends JFrame{
 		numberOfCards++;
 	}
 	
+	private void buildNewRoundPanel(){
+		newRoundPanel = new JPanel();
+		newRoundPanel.setBackground(new Color(0, 0, 0));
+		newRoundLabel = new JLabel();
+		newRoundPanel.add(newRoundLabel);
+	}
+	
+	private void displayNewRound(String result){
+		
+		switch(result){
+			case   "win": newRoundLabel.setText("You win");
+			              break;
+			case  "bust": newRoundLabel.setText("You bust");
+			              break;
+			case "stand": newRoundLabel.setText("You withdrew the game with a total of " + total);
+			              break;
+		}
+		add(newRoundPanel, BorderLayout.CENTER);
+		remove(secondPanel);
+		remove(boardPanel);
+		invalidate();
+		validate();
+	}
+	
 	private class hitButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			boardPanel.add(cardImageLabels[numberOfCards]);
 			total += cardGameValues[cardValues[numberOfCards]-1];
-			if(total >= 21)
-				System.out.println("You win");
+			if(total == 21)
+				displayNewRound("win");
+			else if(total > 21)
+				displayNewRound("bust");
 			System.out.println(total);
 			numberOfCards++;
 			invalidate();
@@ -131,7 +159,7 @@ public class BlackJackGUI extends JFrame{
 	
 	private class standButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
-			
+			displayNewRound("stand");
 		}
 	}
 	
