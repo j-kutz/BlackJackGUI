@@ -1,7 +1,5 @@
 /*
-	TODO: - add win/lose functionality
-		  - add multiple rounds functionality
-		  - polish layout
+	TODO: - polish layout
 		  - add title text to stsrt screen
 		  - add text during game (total, round counter, possible dealer AI)
 */
@@ -15,12 +13,12 @@ public class BlackJackGUI extends JFrame{
 	private JPanel secondPanel;
 	private JPanel startImagePanel;
 	private JPanel boardPanel;
-	private JPanel newRoundPanel;
 	private JLabel startImageLabel;
 	private JLabel newRoundLabel;
 	private JButton hitButton;
 	private JButton startButton;
 	private JButton standButton;
+	private JButton newRoundButton;
 	private final int WINDOW_HEIGHT=600, WINDOW_WIDTH=800;
 	
 	private JLabel[] cardImageLabels;
@@ -29,6 +27,7 @@ public class BlackJackGUI extends JFrame{
 	
 	private int numberOfCards=0;
 	private int total=0;  //contains the player's current total 
+	private boolean firstRound=true; 
 	private int[] cardGameValues = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10};
 	
 	public BlackJackGUI(){
@@ -36,6 +35,12 @@ public class BlackJackGUI extends JFrame{
 		setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);		//centers window
+		newRound();
+		//pack(); 
+		setVisible(true);
+	}
+	
+	private void newRound(){
 		valueArrayInit();
 		imageArrayInit();
 		labelArrayInit();
@@ -43,11 +48,16 @@ public class BlackJackGUI extends JFrame{
 		buildStartImagePanel();
 		buildSecondPanel();
 		buildBoardPanel();
-		buildNewRoundPanel();
-		add(firstPanel, BorderLayout.SOUTH);
-		add(startImagePanel, BorderLayout.CENTER);
-		//pack(); 
-		setVisible(true);
+		if(firstRound){
+			add(firstPanel, BorderLayout.SOUTH);
+			add(startImagePanel, BorderLayout.CENTER);
+		}
+		else{
+			add(secondPanel, BorderLayout.SOUTH);
+			add(boardPanel, BorderLayout.CENTER);
+			invalidate();
+			validate();
+		}
 	}
 	
 	private void valueArrayInit(){
@@ -91,6 +101,9 @@ public class BlackJackGUI extends JFrame{
 		hitButton.addActionListener(new hitButtonListener());
 		standButton = new JButton("Stand");
 		standButton.addActionListener(new standButtonListener());
+		newRoundButton = new JButton("Start New Round");
+		newRoundButton.addActionListener(new newRoundButtonListener());
+		secondPanel.add(newRoundButton);
 		secondPanel.add(hitButton);
 		secondPanel.add(standButton);
 	}
@@ -98,23 +111,17 @@ public class BlackJackGUI extends JFrame{
 	private void buildBoardPanel(){
 		boardPanel = new JPanel();
 		boardPanel.setBackground(new Color(7, 145, 27));
+		numberOfCards = 0;
 		boardPanel.add(cardImageLabels[numberOfCards]);
-		total += cardGameValues[cardValues[numberOfCards]-1];
+		total = cardGameValues[cardValues[numberOfCards]-1];
 		numberOfCards++;
 		boardPanel.add(cardImageLabels[numberOfCards]);
 		total += cardGameValues[cardValues[numberOfCards]-1];
 		numberOfCards++;
-	}
-	
-	private void buildNewRoundPanel(){
-		newRoundPanel = new JPanel();
-		newRoundPanel.setBackground(new Color(0, 0, 0));
-		newRoundLabel = new JLabel();
-		newRoundPanel.add(newRoundLabel);
 	}
 	
 	private void displayNewRound(String result){
-		
+		/*
 		switch(result){
 			case   "win": newRoundLabel.setText("You win");
 			              break;
@@ -122,10 +129,11 @@ public class BlackJackGUI extends JFrame{
 			              break;
 			case "stand": newRoundLabel.setText("You withdrew the game with a total of " + total);
 			              break;
-		}
-		add(newRoundPanel, BorderLayout.CENTER);
-		remove(secondPanel);
-		remove(boardPanel);
+		}*/
+		//add(newRoundPanel, BorderLayout.CENTER);
+		//remove(secondPanel);
+		//remove(boardPanel);
+		newRound();
 		invalidate();
 		validate();
 	}
@@ -147,19 +155,25 @@ public class BlackJackGUI extends JFrame{
 	
 	private class startButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
-			//setContentPane(secondPanel);
 			add(secondPanel, BorderLayout.SOUTH);
 			add(boardPanel, BorderLayout.CENTER);
 			remove(firstPanel);
 			remove(startImagePanel);
 			invalidate();
 			validate();
+			firstRound=false;
 		}
 	}
 	
 	private class standButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			displayNewRound("stand");
+		}
+	}
+	
+	private class newRoundButtonListener implements ActionListener{
+		public void actionPerformed(ActionEvent e){
+			newRound();
 		}
 	}
 	
