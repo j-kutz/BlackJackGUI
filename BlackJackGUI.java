@@ -2,11 +2,13 @@
 	TODO: - add text during game (total, round counter, possible dealer AI)
 */
 import javax.swing.*;
+import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Random;
 
 public class BlackJackGUI extends JFrame{
+	private JLayeredPane lpane;
 	private JPanel resultsPanel;
 	private JPanel secondPanel;
 	private JPanel startImagePanel;
@@ -37,7 +39,8 @@ public class BlackJackGUI extends JFrame{
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);  //centers window
 		setUndecorated(true);
-        getRootPane().setBorder(BorderFactory.createMatteBorder(4, 4, 4, 4, Color.BLACK));
+        //getRootPane().setBorder(BorderFactory.createMatteBorder(4, 4, 4, 4, Color.BLACK));
+		getRootPane().setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED), BorderFactory.createBevelBorder(BevelBorder.LOWERED)));
 		newRound();
 		setVisible(true);
 	}
@@ -48,7 +51,8 @@ public class BlackJackGUI extends JFrame{
 		labelArrayInit();
 		buildStartImagePanel();
 		buildSecondPanel();
-		buildBoardPanel();
+		//buildBoardPanel();
+		buildLayeredPane();
 		buildResultsPanel();
 		hitButton.setEnabled(true);
 		standButton.setEnabled(true);
@@ -58,11 +62,10 @@ public class BlackJackGUI extends JFrame{
 		else{
 			add(resultsPanel, BorderLayout.PAGE_START);
 			add(secondPanel, BorderLayout.SOUTH);
-			add(boardPanel, BorderLayout.CENTER);
+			//add(boardPanel, BorderLayout.CENTER);
+			add(lpane, BorderLayout.CENTER);
 			invalidate();
 			validate();
-			//hitButton.setEnabled(true);
-			//standButton.setEnabled(true);
 		}
 	}
 	
@@ -80,8 +83,12 @@ public class BlackJackGUI extends JFrame{
 	
 	private void labelArrayInit(){
 		cardImageLabels = new JLabel[21];
-		for(int i=0; i<cardImageLabels.length; i++)
+		int x=50, y=600, width=138, height=211;
+		for(int i=0; i<cardImageLabels.length; i++){
 			cardImageLabels[i] = new JLabel(cardImages[i]);
+			cardImageLabels[i].setBounds(x, y, width, height);
+			x+=25;
+		}
 	}
 	
 	private void buildStartImagePanel(){
@@ -180,9 +187,25 @@ public class BlackJackGUI extends JFrame{
 		validate();
 	}
 	
+	private void buildLayeredPane(){
+		lpane = new JLayeredPane();
+		//lpane.setPreferredSize(new Dimension(500, 500));
+		lpane.setBounds(100, 100, 800, 500);
+		lpane.setOpaque(true);
+		lpane.setBackground(new Color(7, 145, 27));
+		numberOfCards = 0;
+		lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
+		total = cardGameValues[cardValues[numberOfCards]-1];
+		numberOfCards++;
+		lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
+		total += cardGameValues[cardValues[numberOfCards]-1];
+		numberOfCards++;
+	}
+	
 	private class hitButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
-			boardPanel.add(cardImageLabels[numberOfCards]);
+			//boardPanel.add(cardImageLabels[numberOfCards]);
+			lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
 			total += cardGameValues[cardValues[numberOfCards]-1];
 			if(total == 21)
 				displayNewRound("win");
@@ -199,7 +222,8 @@ public class BlackJackGUI extends JFrame{
 		public void actionPerformed(ActionEvent e){
 			add(resultsPanel, BorderLayout.PAGE_START);
 			add(secondPanel, BorderLayout.SOUTH);
-			add(boardPanel, BorderLayout.CENTER);
+			//add(boardPanel, BorderLayout.CENTER);
+			add(lpane, BorderLayout.CENTER);
 			remove(startImagePanel);
 			invalidate();
 			validate();
@@ -216,6 +240,8 @@ public class BlackJackGUI extends JFrame{
 	private class newRoundButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){ 
 			remove(secondPanel);
+			remove(resultsPanel);
+			remove(lpane);
 			newRound();
 		}
 	}
