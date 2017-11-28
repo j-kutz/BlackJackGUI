@@ -1,5 +1,11 @@
 /*
-	TODO: - add text during game (total, round counter, possible dealer AI)
+	TODO: - update win/lose
+	      - add round counter
+		  - add split function
+		  - add nonspade card images
+   
+    Bugs: - Check for dealer win/bust after hitButton
+	      - 
 */
 import javax.swing.*;
 import javax.swing.border.*;
@@ -15,7 +21,8 @@ public class BlackJackGUI extends JFrame{
 	private JPanel boardPanel;
 	private JLabel startImageLabel;
 	private JLabel startTitleLabel;
-	private JLabel newRoundLabel;
+	private JLabel dealerUpdateLabel;
+	private JLabel gameLabel;
 	private JButton hitButton;
 	private JButton startButton;
 	private JButton standButton;
@@ -27,10 +34,17 @@ public class BlackJackGUI extends JFrame{
 	private int[] cardValues;
 	private ImageIcon[] cardImages;
 	
+	private JLabel[] dealerImageLabels;
+	private int[] dealerValues;
+	private ImageIcon[] dealerImages;
+	
 	private int numberOfCards=0;
+	private int dealerNumberOfCards=0;
 	private int total=0;  //contains the player's current total 
+	private int dealerTotal=0;
 	private boolean firstRound=true; 
 	private int[] cardGameValues = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10};
+	private String[] cardSuits = {"c", "d", "h", "s"};
 	
 	public BlackJackGUI(){
 		setTitle("Blackjack");
@@ -39,7 +53,6 @@ public class BlackJackGUI extends JFrame{
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);  //centers window
 		setUndecorated(true);
-        //getRootPane().setBorder(BorderFactory.createMatteBorder(4, 4, 4, 4, Color.BLACK));
 		getRootPane().setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED), BorderFactory.createBevelBorder(BevelBorder.LOWERED)));
 		newRound();
 		setVisible(true);
@@ -49,20 +62,19 @@ public class BlackJackGUI extends JFrame{
 		valueArrayInit();
 		imageArrayInit();
 		labelArrayInit();
+		dealerValueArrayInit();
+		dealerImageArrayInit();
+		dealerLabelArrayInit();
 		buildStartImagePanel();
 		buildSecondPanel();
-		//buildBoardPanel();
 		buildLayeredPane();
 		buildResultsPanel();
-		hitButton.setEnabled(true);
-		standButton.setEnabled(true);
 		if(firstRound){
 			add(startImagePanel, BorderLayout.CENTER);
 		}
 		else{
 			add(resultsPanel, BorderLayout.PAGE_START);
 			add(secondPanel, BorderLayout.SOUTH);
-			//add(boardPanel, BorderLayout.CENTER);
 			add(lpane, BorderLayout.CENTER);
 			invalidate();
 			validate();
@@ -78,7 +90,7 @@ public class BlackJackGUI extends JFrame{
 	private void imageArrayInit(){
 		cardImages = new ImageIcon[21];
 		for(int i=0; i<cardImages.length; i++)
-			cardImages[i] = new ImageIcon(String.valueOf(cardValues[i]) + "s.png");
+			cardImages[i] = new ImageIcon(String.valueOf(cardValues[i]) + String.valueOf(cardSuits[new Random().nextInt(3)]) + ".png");
 	}
 	
 	private void labelArrayInit(){
@@ -87,6 +99,28 @@ public class BlackJackGUI extends JFrame{
 		for(int i=0; i<cardImageLabels.length; i++){
 			cardImageLabels[i] = new JLabel(cardImages[i]);
 			cardImageLabels[i].setBounds(x, y, width, height);
+			x+=25;
+		}
+	}
+	
+	private void dealerValueArrayInit(){
+		dealerValues = new int[21];
+		for(int i=0; i<dealerValues.length; i++)
+			dealerValues[i] = (new Random().nextInt(12)+1);
+	}
+	
+	private void dealerImageArrayInit(){
+		dealerImages = new ImageIcon[21];
+		for(int i=0; i<dealerImages.length; i++)
+			dealerImages[i] = new ImageIcon(String.valueOf(dealerValues[i]) + "s.png");
+	}
+	
+	private void dealerLabelArrayInit(){
+		dealerImageLabels = new JLabel[21];
+		int x=50, y=50, width=138, height=211;
+		for(int i=0; i<dealerImageLabels.length; i++){
+			dealerImageLabels[i] = new JLabel(dealerImages[i]);
+			dealerImageLabels[i].setBounds(x, y, width, height);
 			x+=25;
 		}
 	}
@@ -130,26 +164,13 @@ public class BlackJackGUI extends JFrame{
 		secondPanel.add(exitButton);
 	}
 	
-	private void buildBoardPanel(){
-		boardPanel = new JPanel();
-		boardPanel.setBackground(new Color(7, 145, 27));
-		numberOfCards = 0;
-		boardPanel.add(cardImageLabels[numberOfCards]);
-		total = cardGameValues[cardValues[numberOfCards]-1];
-		numberOfCards++;
-		boardPanel.add(cardImageLabels[numberOfCards]);
-		total += cardGameValues[cardValues[numberOfCards]-1];
-		numberOfCards++;
-	}
-	
 	private void buildResultsPanel(){
 		resultsPanel = new JPanel();
 		resultsPanel.setBackground(new Color(7, 145, 27));
-		newRoundLabel = new JLabel();
-		newRoundLabel.setText("Result: ");
-		newRoundLabel.setForeground(Color.WHITE);
-		newRoundLabel.setFont(new Font("Tahoma", Font.BOLD, 30));
-		resultsPanel.add(newRoundLabel);
+		dealerUpdateLabel = new JLabel(" ");
+		dealerUpdateLabel.setForeground(Color.WHITE);
+		dealerUpdateLabel.setFont(new Font("Tahoma", Font.BOLD, 30));
+		resultsPanel.add(dealerUpdateLabel);
 	}
 	
 	private void buildButtons(){
@@ -174,11 +195,26 @@ public class BlackJackGUI extends JFrame{
 	private void displayNewRound(String result){
 		
 		switch(result){
-			case   "win": newRoundLabel.setText("Results: You win");
+			case   "win": gameLabel.setText("You win");
+			              dealerUpdateLabel.setText(" ");
 			              break;
-			case  "bust": newRoundLabel.setText("Results: You bust");
+			case  "bust": gameLabel.setText("You bust");
+			              dealerUpdateLabel.setText(" ");
 			              break;
-			case "stand": newRoundLabel.setText("Results: You withdrew the game with a total of " + total);
+			case "stand": while(dealerTotal <= 16)
+							  dealerTurn();
+						  if(dealerTotal < total){
+							  gameLabel.setText("You beat the dealer");
+						      dealerUpdateLabel.setText(" ");
+						  }
+						  else if(dealerTotal == total){
+							  gameLabel.setText("You tied with the dealer");
+							  dealerUpdateLabel.setText(" ");
+		                  }
+						  else{
+							  gameLabel.setText("Dealer Wins");
+							  dealerUpdateLabel.setText(" ");
+						  }
 			              break;
 		}
 		hitButton.setEnabled(false);
@@ -193,24 +229,63 @@ public class BlackJackGUI extends JFrame{
 		lpane.setBounds(100, 100, 800, 500);
 		lpane.setOpaque(true);
 		lpane.setBackground(new Color(7, 145, 27));
+		gameLabel = new JLabel(" ", JLabel.CENTER);
+		gameLabel.setFont(new Font("Tahoma", Font.BOLD, 50));
+		gameLabel.setForeground(Color.WHITE);
+		gameLabel.setBounds(50, 350, 700, 100);
+		lpane.add(gameLabel);
 		numberOfCards = 0;
+		dealerNumberOfCards = 0;
 		lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
+		lpane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
 		total = cardGameValues[cardValues[numberOfCards]-1];
+		dealerTotal = cardGameValues[dealerValues[numberOfCards]-1];
 		numberOfCards++;
+		dealerNumberOfCards++;
 		lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
+		lpane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
 		total += cardGameValues[cardValues[numberOfCards]-1];
+		dealerTotal += cardGameValues[dealerValues[numberOfCards]-1];
 		numberOfCards++;
+		dealerNumberOfCards++;
+	}
+	
+	private void dealerTurn(){
+		if(dealerTotal < 21){
+			if (dealerTotal <= 16){
+				lpane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
+				dealerTotal += cardGameValues[dealerValues[numberOfCards]-1];
+				dealerNumberOfCards++;
+				dealerUpdateLabel.setText("dealer hits");
+				if(dealerTotal == 21){
+					dealerUpdateLabel.setText(" ");
+					gameLabel.setText("dealer wins");
+					hitButton.setEnabled(false);
+					standButton.setEnabled(false);
+				}
+				else if(dealerTotal > 21){
+					dealerUpdateLabel.setText("dealer busts");
+					gameLabel.setText("You win!");
+					hitButton.setEnabled(false);
+					standButton.setEnabled(false);
+				}
+			}
+			else{
+				dealerUpdateLabel.setText("dealer stands");
+			}
+		}
 	}
 	
 	private class hitButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
-			//boardPanel.add(cardImageLabels[numberOfCards]);
 			lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
 			total += cardGameValues[cardValues[numberOfCards]-1];
 			if(total == 21)
 				displayNewRound("win");
 			else if(total > 21)
 				displayNewRound("bust");
+			else
+				dealerTurn();
 			System.out.println(total);
 			numberOfCards++;
 			invalidate();
@@ -222,7 +297,6 @@ public class BlackJackGUI extends JFrame{
 		public void actionPerformed(ActionEvent e){
 			add(resultsPanel, BorderLayout.PAGE_START);
 			add(secondPanel, BorderLayout.SOUTH);
-			//add(boardPanel, BorderLayout.CENTER);
 			add(lpane, BorderLayout.CENTER);
 			remove(startImagePanel);
 			invalidate();
