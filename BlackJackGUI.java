@@ -5,7 +5,7 @@
 		  - add nonspade card images
    
     Bugs: - Check for dealer win/bust after hitButton
-	      - 
+	      - player stand -> dealer hit -> dealer bust -> won because total higher
 */
 import javax.swing.*;
 import javax.swing.border.*;
@@ -14,9 +14,9 @@ import java.awt.event.*;
 import java.util.Random;
 
 public class BlackJackGUI extends JFrame{
-	private JLayeredPane lpane;
-	private JPanel resultsPanel;
-	private JPanel secondPanel;
+	private final int WINDOW_HEIGHT=960, WINDOW_WIDTH=800;
+	private JLayeredPane gamePane;
+	private JPanel buttonsPanel;
 	private JPanel startImagePanel;
 	private JPanel boardPanel;
 	private JLabel startImageLabel;
@@ -28,12 +28,10 @@ public class BlackJackGUI extends JFrame{
 	private JButton standButton;
 	private JButton newRoundButton;
 	private JButton exitButton;
-	private final int WINDOW_HEIGHT=960, WINDOW_WIDTH=800;
 	
 	private JLabel[] cardImageLabels;
 	private int[] cardValues;
 	private ImageIcon[] cardImages;
-	
 	private JLabel[] dealerImageLabels;
 	private int[] dealerValues;
 	private ImageIcon[] dealerImages;
@@ -59,38 +57,34 @@ public class BlackJackGUI extends JFrame{
 	}
 	
 	private void newRound(){
-		valueArrayInit();
-		imageArrayInit();
+		ArraysInit();
 		labelArrayInit();
-		dealerValueArrayInit();
-		dealerImageArrayInit();
 		dealerLabelArrayInit();
 		buildStartImagePanel();
 		buildSecondPanel();
 		buildLayeredPane();
-		buildResultsPanel();
 		if(firstRound){
 			add(startImagePanel, BorderLayout.CENTER);
 		}
 		else{
-			add(resultsPanel, BorderLayout.PAGE_START);
-			add(secondPanel, BorderLayout.SOUTH);
-			add(lpane, BorderLayout.CENTER);
+			add(buttonsPanel, BorderLayout.SOUTH);
+			add(gamePane, BorderLayout.CENTER);
 			invalidate();
 			validate();
 		}
 	}
 	
-	private void valueArrayInit(){
+	private void ArraysInit(){
 		cardValues = new int[21];
-		for(int i=0; i<cardValues.length; i++)
-			cardValues[i] = (new Random().nextInt(12)+1);
-	}
-	
-	private void imageArrayInit(){
 		cardImages = new ImageIcon[21];
-		for(int i=0; i<cardImages.length; i++)
+		dealerValues = new int[21];
+		dealerImages = new ImageIcon[21];
+		for(int i=0; i<21; i++){
+			cardValues[i] = (new Random().nextInt(12)+1);
 			cardImages[i] = new ImageIcon(String.valueOf(cardValues[i]) + String.valueOf(cardSuits[new Random().nextInt(3)]) + ".png");
+			dealerValues[i] = (new Random().nextInt(12)+1);
+			dealerImages[i] = new ImageIcon(String.valueOf(dealerValues[i]) + String.valueOf(cardSuits[new Random().nextInt(3)]) + ".png");
+		}
 	}
 	
 	private void labelArrayInit(){
@@ -101,18 +95,6 @@ public class BlackJackGUI extends JFrame{
 			cardImageLabels[i].setBounds(x, y, width, height);
 			x+=25;
 		}
-	}
-	
-	private void dealerValueArrayInit(){
-		dealerValues = new int[21];
-		for(int i=0; i<dealerValues.length; i++)
-			dealerValues[i] = (new Random().nextInt(12)+1);
-	}
-	
-	private void dealerImageArrayInit(){
-		dealerImages = new ImageIcon[21];
-		for(int i=0; i<dealerImages.length; i++)
-			dealerImages[i] = new ImageIcon(String.valueOf(dealerValues[i]) + "s.png");
 	}
 	
 	private void dealerLabelArrayInit(){
@@ -134,7 +116,7 @@ public class BlackJackGUI extends JFrame{
 		startTitleLabel.setForeground(Color.WHITE);
 		startTitleLabel.setFont(new Font("Tahoma", Font.BOLD, 50));
 		startButton = new JButton("Start");
-		startButton.addActionListener(new startButtonListener());
+		startButton.addActionListener(new ButtonListener());
 		startButton.setBackground(Color.WHITE);
 		startButton.setForeground(Color.BLACK);
 		startButton.setPreferredSize(new Dimension(500, 50));
@@ -146,31 +128,53 @@ public class BlackJackGUI extends JFrame{
 		startImagePanel.add(startButton);
 	}
 	
-	private void buildSecondPanel(){
-		secondPanel = new JPanel();
-		secondPanel.setBackground(new Color(7, 145, 27));
-		hitButton = new JButton("Hit");
-		hitButton.addActionListener(new hitButtonListener());
-		standButton = new JButton("Stand");
-		standButton.addActionListener(new standButtonListener());
-		newRoundButton = new JButton("New Round");
-		newRoundButton.addActionListener(new newRoundButtonListener());
-		exitButton = new JButton("Exit");
-		exitButton.addActionListener(new exitButtonListener());
-		buildButtons();
-		secondPanel.add(newRoundButton);
-		secondPanel.add(hitButton);
-		secondPanel.add(standButton);
-		secondPanel.add(exitButton);
-	}
-	
-	private void buildResultsPanel(){
-		resultsPanel = new JPanel();
-		resultsPanel.setBackground(new Color(7, 145, 27));
-		dealerUpdateLabel = new JLabel(" ");
+	private void buildLayeredPane(){
+		gamePane = new JLayeredPane();
+		gamePane.setBounds(100, 100, 800, 500);
+		gamePane.setOpaque(true);
+		gamePane.setBackground(new Color(7, 145, 27));
+		dealerUpdateLabel = new JLabel(" ", JLabel.CENTER);
 		dealerUpdateLabel.setForeground(Color.WHITE);
 		dealerUpdateLabel.setFont(new Font("Tahoma", Font.BOLD, 30));
-		resultsPanel.add(dealerUpdateLabel);
+		dealerUpdateLabel.setBounds(0, 0, 800, 50);
+		gamePane.add(dealerUpdateLabel);
+		gameLabel = new JLabel(" ", JLabel.CENTER);
+		gameLabel.setFont(new Font("Tahoma", Font.BOLD, 50));
+		gameLabel.setForeground(Color.WHITE);
+		gameLabel.setBounds(50, 350, 700, 100);
+		gamePane.add(gameLabel);
+		numberOfCards = 0;
+		dealerNumberOfCards = 0;
+		gamePane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
+		gamePane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
+		total = cardGameValues[cardValues[numberOfCards]-1];
+		dealerTotal = cardGameValues[dealerValues[numberOfCards]-1];
+		numberOfCards++;
+		dealerNumberOfCards++;
+		gamePane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
+		gamePane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
+		total += cardGameValues[cardValues[numberOfCards]-1];
+		dealerTotal += cardGameValues[dealerValues[numberOfCards]-1];
+		numberOfCards++;
+		dealerNumberOfCards++;
+	}
+	
+	private void buildSecondPanel(){
+		buttonsPanel = new JPanel();
+		buttonsPanel.setBackground(new Color(7, 145, 27));
+		hitButton = new JButton("Hit");
+		hitButton.addActionListener(new ButtonListener());
+		standButton = new JButton("Stand");
+		standButton.addActionListener(new ButtonListener());
+		newRoundButton = new JButton("New Round");
+		newRoundButton.addActionListener(new ButtonListener());
+		exitButton = new JButton("Exit");
+		exitButton.addActionListener(new ButtonListener());
+		buildButtons();
+		buttonsPanel.add(newRoundButton);
+		buttonsPanel.add(hitButton);
+		buttonsPanel.add(standButton);
+		buttonsPanel.add(exitButton);
 	}
 	
 	private void buildButtons(){
@@ -223,37 +227,10 @@ public class BlackJackGUI extends JFrame{
 		validate();
 	}
 	
-	private void buildLayeredPane(){
-		lpane = new JLayeredPane();
-		//lpane.setPreferredSize(new Dimension(500, 500));
-		lpane.setBounds(100, 100, 800, 500);
-		lpane.setOpaque(true);
-		lpane.setBackground(new Color(7, 145, 27));
-		gameLabel = new JLabel(" ", JLabel.CENTER);
-		gameLabel.setFont(new Font("Tahoma", Font.BOLD, 50));
-		gameLabel.setForeground(Color.WHITE);
-		gameLabel.setBounds(50, 350, 700, 100);
-		lpane.add(gameLabel);
-		numberOfCards = 0;
-		dealerNumberOfCards = 0;
-		lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
-		lpane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
-		total = cardGameValues[cardValues[numberOfCards]-1];
-		dealerTotal = cardGameValues[dealerValues[numberOfCards]-1];
-		numberOfCards++;
-		dealerNumberOfCards++;
-		lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
-		lpane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
-		total += cardGameValues[cardValues[numberOfCards]-1];
-		dealerTotal += cardGameValues[dealerValues[numberOfCards]-1];
-		numberOfCards++;
-		dealerNumberOfCards++;
-	}
-	
 	private void dealerTurn(){
 		if(dealerTotal < 21){
 			if (dealerTotal <= 16){
-				lpane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
+				gamePane.add(dealerImageLabels[numberOfCards], new Integer(dealerNumberOfCards));
 				dealerTotal += cardGameValues[dealerValues[numberOfCards]-1];
 				dealerNumberOfCards++;
 				dealerUpdateLabel.setText("dealer hits");
@@ -276,54 +253,46 @@ public class BlackJackGUI extends JFrame{
 		}
 	}
 	
-	private class hitButtonListener implements ActionListener{
+	private class ButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
-			lpane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
-			total += cardGameValues[cardValues[numberOfCards]-1];
-			if(total == 21)
-				displayNewRound("win");
-			else if(total > 21)
-				displayNewRound("bust");
-			else
-				dealerTurn();
-			System.out.println(total);
-			numberOfCards++;
-			invalidate();
-			validate();
-		}
-	}
-	
-	private class startButtonListener implements ActionListener{
-		public void actionPerformed(ActionEvent e){
-			add(resultsPanel, BorderLayout.PAGE_START);
-			add(secondPanel, BorderLayout.SOUTH);
-			add(lpane, BorderLayout.CENTER);
-			remove(startImagePanel);
-			invalidate();
-			validate();
-			firstRound=false;
-		}
-	}
-	
-	private class standButtonListener implements ActionListener{
-		public void actionPerformed(ActionEvent e){
-			displayNewRound("stand");
-		}
-	}
-	
-	private class newRoundButtonListener implements ActionListener{
-		public void actionPerformed(ActionEvent e){ 
-			remove(secondPanel);
-			remove(resultsPanel);
-			remove(lpane);
-			newRound();
-		}
-	}
-	
-	private class exitButtonListener implements ActionListener{
-		public void actionPerformed(ActionEvent e){
-			setVisible(false);
-			dispose();
+			if(e.getSource() == startButton){
+				add(buttonsPanel, BorderLayout.SOUTH);
+				add(gamePane, BorderLayout.CENTER);
+				remove(startImagePanel);
+				invalidate();
+				validate();
+				firstRound=false;
+			}
+		
+			else if(e.getSource() == newRoundButton){
+				remove(buttonsPanel);
+				remove(gamePane);
+				newRound();
+			}
+		
+			else if(e.getSource() == hitButton){
+				gamePane.add(cardImageLabels[numberOfCards], new Integer(numberOfCards));
+				total += cardGameValues[cardValues[numberOfCards]-1];
+				if(total == 21)
+					displayNewRound("win");
+				else if(total > 21)
+					displayNewRound("bust");
+				else
+					dealerTurn();
+				System.out.println(total);
+				numberOfCards++;
+				invalidate();
+				validate();
+			}
+		
+			else if(e.getSource() == standButton){
+				displayNewRound("stand");
+			}
+		
+			else if(e.getSource() == exitButton){
+				setVisible(false);
+				dispose();
+			}
 		}
 	}
 	
