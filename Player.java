@@ -6,18 +6,28 @@ import javax.swing.JLayeredPane;
 public class Player {
 	private ArrayList<Card> cards;
 	private int count;
-	private int cardCounter, xStart, yStart;
+	private int numOfCards, xStart, yStart;
 	private JLayeredPane panel;
+	private boolean stand;
 	
 	public Player() {
 		count = 0;
-		cardCounter = 0;
+		numOfCards = 0;
 		xStart = 50;
 		yStart = 50;
+		stand = false;
 		cards = new ArrayList<Card>();
 		buildPanel();
 		addCard();
 		addCard();
+	}
+	
+	public boolean isStand() {
+		return stand;
+	}
+	
+	public void setStand(boolean stand) {
+		this.stand = stand;
 	}
 	
 	public JLayeredPane getPanel() {
@@ -56,10 +66,19 @@ public class Player {
 	}
 	
 	public void addCard() {
-		Integer i = new Integer(cardCounter);
-		cards.add(new Card(xStart+ (25*cardCounter), yStart));
-		panel.add(cards.get(cardCounter).getLabel(), i);
-		cardCounter++;
+		Integer i = new Integer(numOfCards);
+		cards.add(new Card(xStart+ (25*numOfCards), yStart));
+		panel.add(cards.get(numOfCards).getLabel(), i);
+		count += cards.get(numOfCards).getValue();
+		numOfCards++;
+	}
+	
+	public boolean isBust() {
+		return count > 21;
+	}
+	
+	public boolean is21() {
+		return count == 21;
 	}
 	
 }
